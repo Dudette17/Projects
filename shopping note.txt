@@ -1,0 +1,685 @@
+create table customer(c_name varchar(25),c_id number(10),email_id varchar(25),address varchar(50),credit number(10),primary key(c_id));
+create table category(category_id varchar(10),category_name varchar(25),c_id number(10),foreign key(c_id) references customer(c_id) on delete cascade,primary key(category_id,c_id));
+create table product(p_type varchar(25),p_id number(10),p_name varchar(25),p_model varchar(25),p_cost varchar(10),category_id varchar(10),c_id number(10),primary key(p_id,c_id),foreign key(category_id,c_id) references category(category_id,c_id) on delete cascade);
+create table cart(cart_id varchar(10),quantity number(5),total_cost varchar(10),p_id number(10),c_id number(10),primary key(c_id,cart_id),foreign key(p_id,c_id) references product(p_id,c_id) on delete cascade);
+create table payment(pay_id varchar(10),pay_type varchar(10),c_id number(10),cart_id varchar(10),primary key(pay_id,c_id,cart_id),foreign key(c_id,cart_id) references cart(c_id,cart_id) on delete cascade);
+
+procedure of sign_up:
+
+create or replace procedure signup(v_customer customer%rowtype)
+as
+v_id customer.c_id%type:=&v_id;
+v_name customer.c_name%type:='&v_name';
+v_email_id customer.email_id%type:='&v_email_id';
+v_address customer.address%type:='&v_address';
+v_credit customer.credit%TYPE:=&v_credit;
+begin
+insert into customer values(v_id,v_name,v_email_id,v_address,v_credit);
+end;
+/
+
+create or replace procedure signup(name in varchar2,id in number,c_email in varchar2,c_address in varchar2,c_credit in number)
+as
+c1_name varchar2(25) :=name;
+email_id1 varchar2(25) :=c_email;
+address1 varchar2(25) :=c_address;
+begin
+insert into customer values(c1_name,id,email_id1,address1,c_credit);
+end;
+/
+declare
+v_id customer.c_id%type:=&v_id;
+v_name customer.c_name%type:='&v_name';
+v_email_id customer.email_id%type:='&v_email_id';
+v_address customer.address%type:='&v_address';
+v_credit customer.credit%TYPE:=&v_credit;
+begin
+signup(v_name,v_id,v_email_id,v_address,v_credit);
+end;
+/
+			
+
+1111.
+
+create or replace procedure login
+(
+id in number
+)
+as
+begin
+declare
+flag number(2):=0;
+v_id customer.c_id%type;
+cursor c1 is select c_id into v_id from customer;
+begin
+open c1;
+loop
+fetch c1 into v_id;
+exit when c1%notfound;
+if id=v_id
+then
+dbms_output.put_line('You have logged into your account.HAPPY SHOPPING!!');
+flag:=1;
+end if;
+end loop;
+if flag=0
+then
+dbms_output.put_line('You havnt signed yet');
+end if;
+close c1;
+end;
+end;									
+/
+declare id customer.c_id%type;
+begin
+id:=&id;
+login(id);
+end;
+/
+
+Procedure for add to cart:
+
+create or replace procedure add_to_cart(p in number,qty in number,cost in varchar2,cs_id in number)
+is 
+cursor c is select ceil(dbms_random.value(10,100)) from dual;
+v_c varchar2(10);
+v_rate cart.total_cost%TYPE:=cost;
+begin
+open c;
+fetch c into v_c;
+insert into cart values(v_c,qty,v_rate,p,cs_id);
+close c;
+end;
+/
+
+
+declare
+v_qty number(5):='&v_qty';
+v_cost varchar2(10):='&v_cost';
+v_cs number(10);
+v_pty varchar2(25):='&v_pty';
+v_pid number(10):=&v_pid;
+v_pname varchar2(25):='&v_pname';
+v_model varchar2(25):='&v_model';
+v_cost1 varchar2(10):='&v_cost1';
+v_catid varchar2(10):='&v_catid';
+begin
+v_cs:=&v_cs;
+add_to_cart(v_pty,v_pid,v_pname,v_model,v_cost1,v_catid,v_qty,v_cost,v_cs);
+end;
+/
+
+
+function for card updation:
+create or replace function card_updation(id in number,amount in number)
+return number
+is
+v_card_points number(10);
+cursor c is select credit from customer where c_id=id;
+begin
+open c;
+fetch c into v_card_points;
+if amount<=1000 
+then
+v_card_points:=v_card_points+10;
+elsif amount<=2000 
+then
+v_card_points:=v_card_points+20;
+elsif amount<=3000 
+then
+v_card_points:=v_card_points+30;
+elsif amount<=4000 
+then
+v_card_points:=v_card_points+40;
+elsif amount<=5000 
+then
+v_card_points:=v_card_points+50;
+elsif amount<=6000 
+then
+v_card_points:=v_card_points+60;
+elsif v_card_points>=10000 
+then
+v_card_points:=v_card_points+100;
+else
+dbms_output.put_line('Not a valid amount');
+end if;
+close c;
+update customer set credit = v_card_points where c_id=id;
+return v_card_points;
+end;
+/
+
+Procedure for display:
+
+create or replace procedure pro_dis(se in number,v_type out varchar2,v_pid out number,v_pname out varchar2,v_model out varchar2,v_cost out varchar,v_catid out varchar)
+as
+begin
+dbms_output.put_line('TYPE ID NAME MODEL COST CATEGORY_ID');
+loop
+select p_type,p_id,p_name,p_model,p_cost,category_id into v_type,v_pid,v_pname,v_model,v_cost,v_catid from product where serial=se;
+end loop;
+end;
+/
+
+
+Procedure for display_oracle:
+
+create or replace procedure pro_dis1
+as
+v_type product.p_type%type;
+v_pid product.p_id%type;
+v_name product.p_name%type;
+v_model product.p_model%type;
+v_cost product.p_cost%type;
+v_cat product.category_id%type;
+cursor c is select p_type,p_id,p_name,p_model,p_cost,category_id  from product;
+begin
+dbms_output.put_line('TYPE ID NAME MODEL COST CATEGORY_ID');
+open c;
+loop
+fetch c into v_type,v_pid,v_name,v_model,v_cost,v_cat;
+exit when c%notfound;
+dbms_output.put_line(v_type||' '||v_pid||' '||v_name||' '||v_model||' '||v_cost||' '||v_cat); 
+end loop;
+close c;
+end;
+/
+
+
+create or replace procedure make_payment(pay_id1 in number,paytype in varchar,ct_id in number,cart_id in number)
+as
+begin
+insert into payment values(pay_id1,paytype,ct_id,cart_id);
+end;
+/
+
+
+begin
+make_payment(1,'cash',11,1101);
+end;
+/
+
+
+
+
+
+
+create or replace function lucky(id in number)
+return number
+as
+v_id number(10);
+begin
+select dbms_random.value(10,100) into v_id from dual;
+if v_id=id then
+return 1;
+else
+return 2;
+end if;
+end;
+/
+
+
+
+declare
+v_suggestion varchar2(100);
+v_rate number(10);
+begin
+dbms_output.put_line('Do you have any suggestions???If so,kindly list them here!!');
+v_suggestion:='&v_suggestion';
+dbms_output.put_line('Rate our shopping center out of 40!');
+v_rate:=&v_rate;
+dbms_output.put_line('Thanks!!!Come again!!');
+end;
+/
+
+
+
+
+
+
+
+
+Function for discount:
+
+
+create or replace function discount(cost in varchar2,id in number)
+return varchar2
+is 
+v_cost varchar2(10):='cost';
+begin
+if cost>5000 and cost<1000
+then
+v_cost:=cost-cost*(10/100);s
+elsif cost>1000 and cost<2000
+then
+v_cost:=cost-cost*(20/100);
+elsif cost>2000 and cost<3000
+then
+v_cost:=cost-cost*(25/100);
+elsif cost>3000
+then
+v_cost:=cost-cost*(30/100);
+end if;
+dbms_output.put_line('Your final amount is'||v_cost);
+return v_cost;
+end;
+/
+
+declare 
+v_cost1 cart.total_cost%type:=&v_cost1;
+n_cs_id1 cart.c_id%type:=&n_cs_id;
+v_cart cart%rowtype;
+begin 
+v_cost1:=discount(v_cost1,n_cs_id1);
+dbms_output.put_line('Your final amount is'||v_cost1);
+end;
+/
+
+Function for sum:
+create or replace function pay_result(id in number)
+return varchar2
+is
+v_amount varchar2(6);
+begin
+select sum(total_cost) into v_amount from cart where c_id=id; 
+return v_amount;
+end;
+/
+
+declare
+v_amt varchar2(6);
+v_id number(10):=&v_id;
+begin
+v_amt:=pay_result(v_id);
+dbms_output.put_line('Your total cost is'||v_amt);
+dbms_output.put_line('Check for your discount eligibility');
+end;
+/
+
+
+Procedure for trigger:
+
+create or replace trigger cart_limit
+before update
+of quantity
+on cart
+declare
+qn number(10);
+cs_id cart.c_id%type;
+cursor c is select count(c_id),c_id from cart group by c_id; 
+begin
+open c;
+loop
+fetch c into qn,cs_id;
+if qn>3 then
+dbms_output.put_line('Cart is full!!!');
+raise_application_error(-20006,'cant update');
+end if;
+end loop;
+close c;
+end;
+/
+
+
+
+
+
+
+create or replace trigger 
+
+
+
+
+
+
+
+
+
+
+
+
+INSERT QUERIES:
+
+insert into customer values('Padma',11,'abc@gmail.com','T nagar chennai',0);
+insert into customer values('Sangavi',12,'sangusaran@gmail.com','vandigate chidambaram',0);
+insert into customer values('Aishu',13,'defg@gmail.com','Arakkonam vellore',0);
+insert into customer values('Amrin',14,'amrintaj98@gmail.com','Perambur chennai',0);
+insert into customer values('Mathanika',15,'minu1998@gmail.com','Salem',0);
+ 
+
+insert into category values('dr001','Dresses',11);
+insert into category values('gif456','Gifts',11);
+insert into category values('gad300','Gadgets',13);
+insert into category values('gif456','Gifts',13);
+insert into category values('acc102','Accessories',14);
+insert into category values('ftw123','Footwear',12);
+insert into category values('bag409','Bags',12);
+insert into category values('dr001','Dresses',15);
+
+
+
+
+
+
+
+create or replace trigger 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+insert into product values('Readymade',011,'Chudidhar','Trendy','1500','dr001',11);
+insert into product values('Semistitched',014,'Kurti','Boutique','1250','dr001',15);
+insert into product values('Material',011,'Chudidhar','Ethnic','500','dr001',15);
+insert into product values('Mobile',3001,'Huawei','AT0T','5000','gad300',13);
+insert into product values('Friendship',4563,'Greetings','medium','150','gif456',11);
+insert into product values('Rakshabandhan',4562,'Keychain','lighted','200','gif456',11);
+insert into product values('MothersDay',4561,'Photoframe','Small','150','gif456',13);
+insert into product values('Filmy',4564,'Phonecase','Mobile','500','gif456',13);
+insert into product values('Earring',1022,'estelle','jimikki','500','acc102',14);
+insert into product values('Neckpiece',1024,'kalyani','Antique','300','acc102',14);
+insert into product values('Slipper',1233,'Bata','floaters','500','ftw123',12);
+insert into product values('Sling bag',4092,'puma','Leather','1000','bag409',12);
+
+
+
+
+insert into cart values('1112',3,'500',011,15);
+insert into cart values('1111',7,'1250',014,15);
+insert into cart values('1109',3,'500',1022,14);
+insert into cart values('1110',6,'300',1024,14);
+insert into cart values('1101',1,'500',011,11);
+insert into cart values('1102',2,'150',4563,11);
+insert into cart values('1103',1,'200',011,4562,11);
+insert into cart values('1104',4,'500',1233,12);
+insert into cart values('1105',1,'4092',4092,12);
+insert into cart values('1108',2,'5000',3001,13);
+insert into cart values('1106',6,'150',4561,13);
+insert into cart values('1107',2,'500',4564,13);
+
+
+insert into payment values('P1201','Cash',15,'1112');
+insert into payment values('P1202','Card',15,'1111');
+insert into payment values('P1202','Cash',14,'1109');
+insert into payment values('P1203','Cash',14,'1110');
+insert into payment values('P1204','Card',11,'1101');
+insert into payment values('P1205','Card',11,'1102');
+insert into payment values('P1206','Cash',12,'1104');
+insert into payment values('P1207','Card',12,'1105');
+insert into payment values('P1208','Cash',13,'1108');
+insert into payment values('P1201','Cash',13,'1106');
+insert into payment values('P1201','Cash',13,'1107');
+
+
+
+
+
+
+
+
+
+dr001dresses
+	chudidhar ch011
+	jean jea012
+	saree sa013
+	kurti ku014
+acc102accessories
+	cosmetics co1021
+	watches wat1025
+	earrings ear1022
+	bangles ban1023
+	neckpiece nec1024
+gad300gadgets
+	mobile mob3001
+	laptops lap3002
+	kitchengadgets kit3003
+bag409bags 
+	shoulder sho4091
+	sling sli4092
+	colbag	clg4093
+	travelbag tra4094
+ftw123footwear
+	sportsshoes spr1231
+	heals hea1232
+	floaters flo1233
+	formalshoes for1234
+gif456gifts
+	photoframe ph4561
+	keychain key4562
+	cards car4563
+	backcase cas4564
+
+
+insert into customer(c_name,c_id,email_id,address,credit) values('sed',3,'dhfd','sjgfkhdfk',5);
+
+
+
+
+
+
+
+
+create or replace 
+before insert
+on customer
+begin
+if c_id=id then
+dbms_output.put_line('You already have an acccount');
+end;
+/
+
+
+code:
+2/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package shopping;
+
+/**
+ *
+ * @author HP
+ * /
+ */ 
+import java.sql.*;
+import java.util.Scanner;
+public class Shopping {
+    public static void main(String[] args)throws SQLException, ClassNotFoundException  { 
+        int ret_code;
+		try{  
+		Class.forName("oracle.jdbc.driver.OracleDriver");   
+		Connection con = DriverManager.getConnection("jdbc:oracle:thin:@PADMAPRIYA-98:1521:XE","SYSTEM","chitra");  
+                Statement stmt = con.createStatement();
+                 Scanner sc = new Scanner(System.in); 
+                 System.out.println("WELCOME TO WOMEN SHOPPING CENTER");
+                 int ch;
+                  do
+                 {
+                System.out.println("Enter your choice:");
+                System.out.println("1.Signup");
+                System.out.println("2.Login");
+                System.out.println("3.Product display");
+                System.out.println("4.Add to cart");
+                System.out.println("5.Discount Eligibility");
+                System.out.println("6.Total amount");
+                System.out.println("7.Payment");
+                System.out.println("8.Card updation");
+                System.out.println("9.Check your luck");
+                
+                int choice=sc.nextInt();
+                switch(choice)
+                {
+                    case 1:    //Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@PADMAPRIYA-98:1521:XE","SYSTEM","chitra");  
+                 CallableStatement pstmt = con.prepareCall("{call signup(?,?,?,?,?)}");
+                 System.out.println("Enter your name,id,email,address,credit points");
+ String name = sc.next();
+ int id = sc.nextInt();
+ String em = sc.next();
+ String ad = sc.next();
+ int c = sc.nextInt();
+ 
+ pstmt.setString(1, name);
+ pstmt.setInt(2, id);
+ pstmt.setString(3, em);
+ pstmt.setString(4, ad);
+ pstmt.setInt(5, c);
+ pstmt.executeUpdate();
+System.out.println("You have signed in successfully");
+ pstmt.close();
+ break;
+                    case 2:
+                        CallableStatement p1stmt = con.prepareCall("{call login(?)}");
+                        System.out.println("Enter your id");
+                        int id1=sc.nextInt();
+                        p1stmt.setInt(1,id1);
+                        p1stmt.executeUpdate();
+                        System.out.println("You have signed in successfully");
+                        p1stmt.close();
+                        break;
+                    case 3:
+                        int i=12;
+                         System.out.println("The products are as follows");
+                         while(i!=0)
+                         {
+                            CallableStatement p4stmt = con.prepareCall("{call pro_dis(?,?,?,?,?,?,?)}");
+                            p4stmt.setInt(7,i);
+                            p4stmt.registerOutParameter(1,java.sql.Types.VARCHAR);
+                            p4stmt.registerOutParameter(2,java.sql.Types.INTEGER);
+                            p4stmt.registerOutParameter(3,java.sql.Types.VARCHAR);
+                            p4stmt.registerOutParameter(4,java.sql.Types.VARCHAR);
+                            p4stmt.registerOutParameter(5,java.sql.Types.VARCHAR);
+                            p4stmt.registerOutParameter(6,java.sql.Types.VARCHAR);
+                            p4stmt.executeUpdate(); 
+                             String f9 = p4stmt.getString(1);
+                             int f10 = p4stmt.getInt(2);
+                             String f11 = p4stmt.getString(3);
+                             String f12 = p4stmt.getString(4);
+                             String f13 = p4stmt.getString(5);
+                             String f14 = p4stmt.getString(6);
+                             System.out.println(f9+" "+f10+" "+f11+" "+f12+" "+f13+" "+f14);
+                            i--;
+                            p4stmt.close();
+                         }
+                        
+                        break;
+                    case 4:
+                         CallableStatement p7stmt = con.prepareCall("{call add_to_cart(?,?,?,?)}");
+                 System.out.println("Enter your product id,quatity,cost,customer_id");
+ 
+ int id7 = sc.nextInt();
+ int qty = sc.nextInt();
+ String cost = sc.next();
+ int cs = sc.nextInt();
+ 
+ p7stmt.setInt(1,id7);
+ p7stmt.setInt(2,qty);
+ p7stmt.setString(3,cost);
+ p7stmt.setInt(4,cs);
+ p7stmt.executeUpdate();
+                        System.out.println("your product has been added to your cart");
+                        p7stmt.close();
+                        break;
+                    case 5:
+                         CallableStatement p2stmt = con.prepareCall("{?=call discount(?,?)}");
+                        System.out.println("Enter your cost and id");
+                        String s=sc.next();
+                        int id2=sc.nextInt();
+                        
+                        p2stmt.setString(2,s);
+                        p2stmt.setInt(3,id2);
+                        
+                        p2stmt.registerOutParameter(1,java.sql.Types.VARCHAR);
+                        p2stmt.executeUpdate();
+                        String fc = p2stmt.getString(1);
+                        System.out.println("Your final amount is "+fc);
+                        p2stmt.close();
+                        break;
+                    case 6:
+                        CallableStatement p3stmt = con.prepareCall("{?=call pay_result(?)}");
+                        System.out.println("Enter your id");
+                        int id3=sc.nextInt();
+                        p3stmt.setInt(2,id3);
+                        p3stmt.registerOutParameter(1,java.sql.Types.VARCHAR);
+                        p3stmt.executeUpdate();
+                        String f=p3stmt.getString(1);
+                        System.out.println("Your final amount is"+f);
+                        p3stmt.close();
+                        break;
+                    case 7:
+                        CallableStatement p8stmt = con.prepareCall("{call make_payment(?,?,?,?)}");
+                        System.out.println("Enter your ccv,type of payment,customer_id,cart_id");
+                        int f15=sc.nextInt();
+                        String type = sc.next();
+                        int f16=sc.nextInt();
+                        int f17=sc.nextInt();
+                        p8stmt.setInt(1,f15);
+                        p8stmt.setString(2,type);
+                        p8stmt.setInt(3,f16);
+                        p8stmt.setInt(4,f17);
+                        p8stmt.registerOutParameter(1,java.sql.Types.INTEGER);
+                        p8stmt.executeUpdate();
+                        System.out.println("Proceed to your payment");
+                        p8stmt.close();
+                        break;
+                    case 8:
+                        CallableStatement p6stmt = con.prepareCall("{?=call card_updation(?,?)}");
+                        System.out.println("Enter your id and amount");
+                        int id5=sc.nextInt();
+                        int am = sc.nextInt();
+                        p6stmt.setInt(2,id5);
+                        p6stmt.setInt(3,am);
+                        p6stmt.registerOutParameter(1,java.sql.Types.INTEGER);
+                        p6stmt.executeUpdate();
+                        int f2=p6stmt.getInt(1);
+                        System.out.println("The points added to your credit is"+f2);
+                        p6stmt.close();
+                        break;
+                    case 9:
+                        CallableStatement p10stmt = con.prepareCall("{?=call lucky(?)}");
+                        System.out.println("Enter your id");
+                        int f18=sc.nextInt();
+                        p10stmt.setInt(2,f18);
+                        p10stmt.registerOutParameter(1,java.sql.Types.INTEGER);
+                        p10stmt.executeUpdate();
+                        int var = p10stmt.getInt(1);
+                        if(var==1)
+                            System.out.println("Congratulations!!You are the lucky winner");
+                        else if(var==2)
+                            System.out.println("Sorry!!Better luck next time");
+                        p10stmt.close();
+                        break;
+                        
+                }
+                System.out.println("press any key to continue and zero to exit");
+                ch = sc.nextInt();
+                 }  while ch != 0;    
+                        
+ con.close();
+  } catch (SQLException e) {ret_code = e.getErrorCode();
+   System.err.println(ret_code + e.getMessage());}
+ 
+		
+                catch(Exception e){ System.out.println(e);}  
+		} 
+}
+
+    
+    
+
+
