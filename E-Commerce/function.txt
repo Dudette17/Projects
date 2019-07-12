@@ -1,0 +1,323 @@
+Functions, Procedures and Trigger
+
+PROCEDURE FOR SIGN UP
+
+create or replace procedure signup(v_customer customer%rowtype)
+as
+v_id customer.c_id%type:=&v_id;
+v_name customer.c_name%type:='&v_name';
+v_email_id customer.email_id%type:='&v_email_id';
+v_address customer.address%type:='&v_address';
+v_credit customer.credit%TYPE:=&v_credit;
+begin
+insert into customer values(v_id,v_name,v_email_id,v_address,v_credit);
+end;
+/
+
+create or replace procedure signup(name in varchar2,id in number,c_email in varchar2,c_address in varchar2,c_credit in number)
+as
+c1_name varchar2(25) :=name;
+email_id1 varchar2(25) :=c_email;
+address1 varchar2(25) :=c_address;
+begin
+insert into customer values(c1_name,id,email_id1,address1,c_credit);
+end;
+/
+declare
+v_id customer.c_id%type:=&v_id;
+v_name customer.c_name%type:='&v_name';
+v_email_id customer.email_id%type:='&v_email_id';
+v_address customer.address%type:='&v_address';
+v_credit customer.credit%TYPE:=&v_credit;
+begin
+signup(v_name,v_id,v_email_id,v_address,v_credit);
+end;
+/
+			
+PROCEDURE FOR LOGIN
+
+create or replace procedure login
+(
+id in number
+)
+as
+begin
+declare
+flag number(2):=0;
+v_id customer.c_id%type;
+cursor c1 is select c_id into v_id from customer;
+begin
+open c1;
+loop
+fetch c1 into v_id;
+exit when c1%notfound;
+if id=v_id
+then
+dbms_output.put_line('You have logged into your account.HAPPY SHOPPING!!');
+flag:=1;
+end if;
+end loop;
+if flag=0
+then
+dbms_output.put_line('You havnt signed yet');
+end if;
+close c1;
+end;
+end;									
+/
+declare id customer.c_id%type;
+begin
+id:=&id;
+login(id);
+end;
+/
+
+
+PROCEDURE FOR ADD TO CART
+
+create or replace procedure add_to_cart(p in number,qty in number,cost in varchar2,cs_id in number)
+is 
+cursor c is select ceil(dbms_random.value(10,100)) from dual;
+v_c varchar2(10);
+v_rate cart.total_cost%TYPE:=cost;
+begin
+open c;
+fetch c into v_c;
+insert into cart values(v_c,qty,v_rate,p,cs_id);
+close c;
+end;
+/
+
+declare
+v_qty number(5):='&v_qty';
+v_cost varchar2(10):='&v_cost';
+v_cs number(10);
+v_pty varchar2(25):='&v_pty';
+v_pid number(10):=&v_pid;
+v_pname varchar2(25):='&v_pname';
+v_model varchar2(25):='&v_model';
+v_cost1 varchar2(10):='&v_cost1';
+v_catid varchar2(10):='&v_catid';
+begin
+v_cs:=&v_cs;
+add_to_cart(v_pty,v_pid,v_pname,v_model,v_cost1,v_catid,v_qty,v_cost,v_cs);
+end;
+/
+
+PROCEDURE FOR ADD TO CART
+
+create or replace procedure add_to_cart(p in number,qty in number,cost in varchar2,cs_id in number)
+is 
+cursor c is select ceil(dbms_random.value(10,100)) from dual;
+v_c varchar2(10);
+v_rate cart.total_cost%TYPE:=cost;
+begin
+open c;
+fetch c into v_c;
+insert into cart values(v_c,qty,v_rate,p,cs_id);
+close c;
+end;
+/
+
+
+declare
+v_qty number(5):='&v_qty';
+v_cost varchar2(10):='&v_cost';
+v_cs number(10);
+v_pty varchar2(25):='&v_pty';
+v_pid number(10):=&v_pid;
+v_pname varchar2(25):='&v_pname';
+v_model varchar2(25):='&v_model';
+v_cost1 varchar2(10):='&v_cost1';
+v_catid varchar2(10):='&v_catid';
+begin
+v_cs:=&v_cs;
+add_to_cart(v_pty,v_pid,v_pname,v_model,v_cost1,v_catid,v_qty,v_cost,v_cs);
+end;
+/
+
+PROCEDURE FOR DISPLAY
+
+create or replace procedure pro_dis(se in number,v_type out varchar2,v_pid out number,v_pname out varchar2,v_model out varchar2,v_cost out varchar,v_catid out varchar)
+As
+Begin
+dbms_output.put_line('TYPE ID NAME MODEL COST CATEGORY_ID');
+loop
+select p_type,p_id,p_name,p_model,p_cost,category_id into v_type,v_pid,v_pname,v_model,v_cost,v_catid from product where serial=se;
+end loop;
+end;
+/
+
+
+PRODUCT DISP
+
+create or replace procedure pro_dis1
+as
+v_type product.p_type%type;
+v_pid product.p_id%type;
+v_name product.p_name%type;
+v_model product.p_model%type;
+v_cost product.p_cost%type;
+v_cat product.category_id%type;
+cursor c is select p_type,p_id,p_name,p_model,p_cost,category_id  from product;
+begin
+dbms_output.put_line('TYPE ID NAME MODEL COST CATEGORY_ID');
+open c;
+loop
+fetch c into v_type,v_pid,v_name,v_model,v_cost,v_cat;
+exit when c%notfound;
+dbms_output.put_line(v_type||' '||v_pid||' '||v_name||' '||v_model||' '||v_cost||' '||v_cat); 
+end loop;
+close c;
+end;
+/
+ PROCEDURE FRO MAKE PAYMENT
+ 
+create or replace procedure make_payment(pay_id1 in number,paytype in varchar,ct_id in number,cart_id in number)
+as
+begin
+insert into payment values(pay_id1,paytype,ct_id,cart_id);
+end;
+/
+
+
+begin
+make_payment(1,'cash',11,1101);
+end;
+/
+
+FUNCTION FOR LUCKY WINNER
+
+create or replace function lucky(id in number)
+return number
+as
+v_id number(10);
+begin
+select dbms_random.value(10,100) into v_id from dual;
+if v_id=id then
+return 1;
+else
+return 2;
+end if;
+end;
+/
+
+declare
+v_suggestion varchar2(100);
+v_rate number(10);
+begin
+dbms_output.put_line('Do you have any suggestions???If so,kindly list them here!!');
+v_suggestion:='&v_suggestion';
+dbms_output.put_line('Rate our shopping center out of 40!');
+v_rate:=&v_rate;
+dbms_output.put_line('Thanks!!!Come again!!');
+end;
+/
+
+FUNCTION FOR CARD UPDATION	
+  create or replace function card_updation(id in number,amount in number)
+	return number
+	is
+	v_card_points number(10);
+	cursor c is select credit from customer where c_id=id;
+	begin
+	open c;
+	fetch c into v_card_points;
+	if amount<=1000 
+	then
+	v_card_points:=v_card_points+10;
+	elsif amount<=2000 
+	then
+	v_card_points:=v_card_points+20;
+	elsif amount<=3000 
+	then
+	v_card_points:=v_card_points+30;
+	elsif amount<=4000 
+	then
+	v_card_points:=v_card_points+40;
+	elsif amount<=5000 
+	then
+	v_card_points:=v_card_points+50;
+	elsif amount<=6000 
+	then
+	v_card_points:=v_card_points+60;
+	elsif v_card_points>=10000 
+	then
+	v_card_points:=v_card_points+100;
+	else
+	dbms_output.put_line('Not a valid amount');
+	end if;
+	close c;
+	update customer set credit = v_card_points where c_id=id;
+	return v_card_points;
+	end;
+	/
+	
+	FUNCTION FOR DISCOUNT
+  
+	create or replace function discount(cost in varchar2,id in number)
+	return varchar2
+	is 
+	v_cost varchar2(10):='cost';
+	begin
+	if cost>5000 and cost<1000
+	then
+	v_cost:=cost-cost*(10/100);s
+	elsif cost>1000 and cost<2000
+	then
+	v_cost:=cost-cost*(20/100);
+	elsif cost>2000 and cost<3000
+	then
+	v_cost:=cost-cost*(25/100);
+	elsif cost>3000
+	then
+	v_cost:=cost-cost*(30/100);
+	end if;
+	dbms_output.put_line('Your final amount is'||v_cost);
+	return v_cost;
+	end;
+	/
+	
+	declare 
+	v_cost1 cart.total_cost%type:=&v_cost1;
+	n_cs_id1 cart.c_id%type:=&n_cs_id;
+	v_cart cart%rowtype;
+	begin 
+	v_cost1:=discount(v_cost1,n_cs_id1);
+	dbms_output.put_line('Your final amount is'||v_cost1);
+	end;
+	/
+	
+	FUNCTION FOR SUM
+  
+	create or replace function pay_result(id in number)
+	return varchar2
+	is
+	v_amount varchar2(6);
+	begin
+	select sum(total_cost) into v_amount from cart where c_id=id; 
+	return v_amount;
+	end;
+	/
+	
+	declare
+	v_amt varchar2(6);
+	v_id number(10):=&v_id;
+	begin
+	v_amt:=pay_result(v_id);
+	dbms_output.put_line('Your total cost is'||v_amt);
+	dbms_output.put_line('Check for your discount eligibility');
+	end;
+	/
+	
+	TRIGGER	
+
+	create or replace 
+	before insert
+	on customer
+	begin
+	if c_id=id then
+	dbms_output.put_line('You already have an acccount');
+	end;
+	/
+	
